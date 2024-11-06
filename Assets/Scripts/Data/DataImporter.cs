@@ -433,8 +433,8 @@ public class DataImporter : MonoBehaviour
                 var boxCollider = go.AddComponent<BoxCollider>();
                 // Encompass the entire object by default
                 var bounds = Utility.GetCombinedBounds(go);
-                boxCollider.center = bounds.center;
-                boxCollider.size = bounds.size;
+                boxCollider.center = boxCollider.transform.InverseTransformPoint(bounds.center);
+                boxCollider.size = boxCollider.transform.InverseTransformVector(bounds.size);
 
                 if (node.TryGetValue(nameof(boxCollider.center), out valueNode))
                     boxCollider.center = valueNode;

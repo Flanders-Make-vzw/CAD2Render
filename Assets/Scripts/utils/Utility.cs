@@ -30,8 +30,8 @@ namespace C2R
 
         public static Bounds GetCombinedBounds(GameObject go)
         {
-            var bounds = go.GetComponentsInChildren<MeshFilter>()
-                .Select(x => x.sharedMesh.bounds)
+            var bounds = go.GetComponentsInChildren<Renderer>()
+                .Select(x => x.bounds)
                 .ToArray();
             return Combine(bounds);
         }
