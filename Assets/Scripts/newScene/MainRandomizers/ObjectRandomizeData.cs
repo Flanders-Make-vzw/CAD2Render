@@ -42,6 +42,10 @@ public class ObjectRandomizeData : ScriptableObject
     public float randomRotationOffsetValue = 0.0f;
     [Tooltip("Axis around the random rotation is done.")]
     public Vector3 randomRotationAxis = Vector3.forward;
+    [Tooltip("Enable random scaling of models in POI")]
+    public bool randomModelScaling = false;
+    [Tooltip("scales randomly (uniform) between x and y values.")]
+    public Vector2 randomScaleValue = Vector2.one;
 
     [Space(10)]
     [Tooltip("Handles all submodels seperatly as if they where there own prefab. (keeps undelying structure)")]

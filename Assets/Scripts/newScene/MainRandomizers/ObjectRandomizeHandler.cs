@@ -189,6 +189,13 @@ public class ObjectRandomizeHandler : RandomizerInterface, IDatasetUser<ObjectRa
             return;//spawning failed
         clone.name = model.name;
 
+        if (objectData.randomModelScaling)
+        {
+            var scaleRange = objectData.randomScaleValue;
+            var scale = rng.Range(scaleRange.x, scaleRange.y);
+            clone.transform.localScale *= scale;
+        }
+
         if (objectData.randomSubModelTranslation)
         {
             Transform childTrans = clone.transform.Find(objectData.subModelName);
