@@ -424,7 +424,11 @@ public class DataImporter : MonoBehaviour
                         meshCollider = filter.gameObject.AddComponent<MeshCollider>();
                     
                     meshCollider.sharedMesh = filter.sharedMesh;
-                    meshCollider.convex = true;
+
+                    if (node.TryGetValue(nameof(meshCollider.convex), out valueNode))
+                        meshCollider.convex = valueNode;
+                    else
+                        meshCollider.convex = true;
                 }
                 
                 break;
@@ -630,6 +634,9 @@ public class DataImporter : MonoBehaviour
 
     private bool TryLoadCubemaps(string path)
     {
+        if (string.IsNullOrEmpty(path))
+            return false;
+        
         Texture[] cubemaps = ResourceManager.LoadAll<Cubemap>(path);
         // If it isn't a valid resource path (no resources found). Check if there are any jsons
         if (cubemaps.Any())
