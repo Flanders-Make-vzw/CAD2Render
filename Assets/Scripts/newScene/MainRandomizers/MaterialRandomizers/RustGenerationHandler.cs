@@ -43,20 +43,16 @@ public class RustGenerationHandler : MaterialRandomizerInterface, IDatasetUser<R
         rustmapGenerationShader.SetInt("randSeed", rng.IntRange(128, Int32.MaxValue));
         rustmapGenerationShader.SetInt("applyRust", 1);
 
-        textures.set(MaterialTextures.MapTypes.maskMap,
-            textures.GetCurrentLinkedTexture("_MaskMap"),
-            new Color(textures.GetCurrentLinkedFloat("_Metallic", "metallicFactor"), 1, 0, textures.GetCurrentLinkedFloat("_Smoothness", "roughnessFactor")));
+        textures.set(MaterialTextures.MapTypes.maskMap, new Color(textures.GetCurrentLinkedFloat("_Metallic", "metallicFactor"), 1, 0, textures.GetCurrentLinkedFloat("_Smoothness", "roughnessFactor")));
         rustmapGenerationShader.SetTexture(kernelHandle, "MaskMapInOut", textures.get(MaterialTextures.MapTypes.maskMap));
 
-        textures.set(MaterialTextures.MapTypes.colorMap,
-            textures.GetCurrentLinkedTexture("_BaseColorMap", "baseColorTexture"),
-            textures.GetCurrentLinkedColor("_Color", "baseColorFactor"));
+        textures.set(MaterialTextures.MapTypes.colorMap, textures.GetCurrentLinkedColor("_Color", "baseColorFactor"));
         rustmapGenerationShader.SetTexture(kernelHandle, "ColorMapInOut", textures.get(MaterialTextures.MapTypes.colorMap));
 
-        textures.set(MaterialTextures.MapTypes.defectMap, textures.get(MaterialTextures.MapTypes.defectMap), textures.falseColor.falseColor);
+        textures.set(MaterialTextures.MapTypes.defectMap, textures.get(MaterialTextures.MapTypes.defectMap), textures.falseColor?.falseColor ?? Color.black);
         rustmapGenerationShader.SetTexture(kernelHandle, "DefectMapInOut", textures.get(MaterialTextures.MapTypes.defectMap));
 
-        var normalMap = textures.GetCurrentLinkedTexture("_NormalMap", "normalTexture");
+        var normalMap = textures.GetCurrentLinkedTexture(MaterialTextures.MapTypes.normalMap);
         textures.set(MaterialTextures.MapTypes.normalMap, normalMap, new Color(0.5f, 0.5f, 1.0f));
         rustmapGenerationShader.SetTexture(kernelHandle, "NormalMapInOut", textures.get(MaterialTextures.MapTypes.normalMap));
         if (normalMap != null)

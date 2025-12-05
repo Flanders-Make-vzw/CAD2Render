@@ -5,9 +5,22 @@ using UnityEngine;
 
 public class MaterialTextures
 {
+    public enum MapTypes
+    {
+        colorMap,
+        maskMap,
+        detailMap,
+        normalMap,
+        defectMap,
+        //resampleLocationMap// this is a static map to save ram memory.
+    }
+    
     private Dictionary<MapTypes, RenderTexture> textures = new Dictionary<MapTypes, RenderTexture>();
     private Dictionary<MapTypes, bool> textureDisabled = new Dictionary<MapTypes, bool>();
     private static RenderTexture resampleLocations;
+    
+    public Shader shader { get; private set; }
+
     public Renderer rend { get; private set; }
     public int materialIndex { get; private set; }
     public FalseColor falseColor { get; set; }
@@ -46,20 +59,12 @@ public class MaterialTextures
         this.materialIndex = materialIndex;
         this.falseColor = null;
 
+        this.shader = this.rend.sharedMaterials[materialIndex]?.shader;
         rend.GetPropertyBlock(newProperties, materialIndex);
         newProperties.Clear();
     }
 
-    public enum MapTypes
-    {
-        colorMap,
-        maskMap,
-        detailMap,
-        normalMap,
-        defectMap,
-        //resampleLocationMap// this is a static map to save ram memory.
-    }
-    public RenderTexture set(MapTypes type, Texture baseTexture, Color backupColor)
+    public RenderTexture set(MapTypes type, Texture baseTexture, Color? backupColor)
     {
         if (!textures.ContainsKey(type))
             textures.Add(type, null);
@@ -71,6 +76,21 @@ public class MaterialTextures
         textures[type] = newTexture;
         return newTexture;
     }
+
+    public RenderTexture set(MapTypes type, Color? backupColor)
+    {
+        if (!textures.ContainsKey(type))
+            textures.Add(type, null);
+        if (textureDisabled.ContainsKey(type))
+            textureDisabled.Remove(type);
+
+        RenderTexture newTexture = textures[type];
+        var baseTexture = GetCurrentLinkedTexture(type);
+        setTexture(baseTexture, backupColor, ref newTexture, type != MapTypes.colorMap);
+        textures[type] = newTexture;
+        return newTexture;
+    }
+    
     public RenderTexture get(MapTypes type)
     {
         if (textures.ContainsKey(type) && !textureDisabled.ContainsKey(type))
@@ -98,24 +118,7 @@ public class MaterialTextures
         return resampleLocations;
     }
 
-    public string getTextureName(MapTypes type)
-    {
-        switch (type)
-        {
-            case MapTypes.colorMap:
-                return "_BaseColorMap";
-            case MapTypes.maskMap:
-                return "_MaskMap";
-            case MapTypes.detailMap:
-                return "_DetailMap";
-            case MapTypes.normalMap:
-                return "_NormalMap";
-            case MapTypes.defectMap:
-                return "_FalseColorTex";
-            default:
-                return "";
-        }
-    }
+    public string getTextureName(MapTypes type) => TextureNameResolver.getTextureName(shader, type);
 
     public void linkpropertyBlock()
     {
@@ -131,7 +134,8 @@ public class MaterialTextures
         if (falseColor != null)
         {
             falseColor.falseColorTex = get(MapTypes.defectMap);
-            Vector4 scaleOffsetVector = GetCurrentLinkedVector("_BaseColorMap_ST", "baseColorTexture_ST");
+            var colorMapName = getTextureName(MapTypes.colorMap);
+            Vector4 scaleOffsetVector = GetCurrentLinkedVector(colorMapName + "_ST", "_BaseColorMap_ST");
             if (scaleOffsetVector == new Vector4(0, 0, 0, 0))
                 scaleOffsetVector = new Vector4(1, 1, 0, 0);
             falseColor.scaleOffset = scaleOffsetVector;
@@ -152,7 +156,7 @@ public class MaterialTextures
     }
 
 
-    private void setTexture(Texture source, Color backupColor, ref RenderTexture destination, bool liniearColorSpace = true)
+    private void setTexture(Texture source, Color? backupColor, ref RenderTexture destination, bool liniearColorSpace = true)
     {
         if (destination == null)
         {
@@ -177,11 +181,9 @@ public class MaterialTextures
         }
         else
         {
-            if (backupColor == null)
-                backupColor = new Color(0, 0, 0);
             RenderTexture rt = RenderTexture.active;
             RenderTexture.active = destination;
-            GL.Clear(true, true, backupColor);
+            GL.Clear(true, true, backupColor ?? new Color(0, 0, 0));
             RenderTexture.active = rt;
         }
     }
@@ -227,6 +229,13 @@ public class MaterialTextures
         Debug.LogWarning("Error occured while requesting a property of a material. Probably an unsuported material shader is used. <br>Shader: <b>" + rend.material.shader.name + "</b> has no attribute: <b>" + propertyName + "</b>");
         return new Color(0, 0, 0, 0);
     }
+
+    public Texture GetCurrentLinkedTexture(MapTypes type)
+    {
+        string textureName = getTextureName(type);
+        return GetCurrentLinkedTexture(textureName);
+    }
+
     public Texture GetCurrentLinkedTexture(string propertyName, string altPropertyName = null)
     {
         if (newProperties.HasTexture(propertyName))
@@ -246,7 +255,6 @@ public class MaterialTextures
 
         Debug.LogWarning("Error occured while requesting a property of a material. Probably an unsuported material shader is used. <br>Shader: <b>" + rend.material.shader.name + "</b> has no attribute: <b>" + propertyName + "</b>");
         return null;
-        
     }
 
     public float GetCurrentLinkedFloat(string propertyName, string altPropertyName = null)
